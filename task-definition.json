@@ -1,0 +1,21 @@
+{
+    "family": "system-monitor",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "executionRoleArn": "arn:aws:iam::150374086772:role/ecsTaskExecutionRole",
+    "containerDefinitions": [
+        {
+            "name": "system-monitor",
+            "image": "150374086772.dkr.ecr.us-east-1.amazonaws.com/system-monitor:latest",
+            "portMappings": [
+                {
+                    "containerPort": 8000,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true
+        }
+    ]
+}

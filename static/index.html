@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TFS DevOps Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f0f; color: #eee; padding: 40px 20px; }
+    h1 { font-size: 22px; margin-bottom: 24px; color: #fff; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .card { background: #1a1a1a; border-radius: 10px; padding: 20px; border: 1px solid #2a2a2a; }
+    .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .big { font-size: 36px; font-weight: bold; }
+    .sub { font-size: 13px; color: #888; margin-top: 6px; }
+    .ok { color: #4ade80; }
+    .warn { color: #facc15; }
+    .danger { color: #f87171; }
+    .bar-bg { background: #2a2a2a; border-radius: 4px; height: 6px; margin-top: 10px; }
+    .bar { height: 6px; border-radius: 4px; transition: width 0.4s; }
+    button { margin-top: 24px; background: #333; color: #eee; border: 1px solid #444; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    button:hover { background: #444; }
+    #status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <h1><span id="status-dot"></span>TFS DevOps Dashboard</h1>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">API Health</div>
+      <div class="big ok" id="health-status">—</div>
+    </div>
+
+    <div class="card">
+      <div class="label">CPU Usage</div>
+      <div class="big" id="cpu">—</div>
+      <div class="bar-bg"><div class="bar" id="cpu-bar"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Memory</div>
+      <div class="big" id="mem">—</div>
+      <div class="sub" id="mem-sub">—</div>
+      <div class="bar-bg"><div class="bar" id="mem-bar"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Disk</div>
+      <div class="big" id="disk">—</div>
+      <div class="sub" id="disk-sub">—</div>
+      <div class="bar-bg"><div class="bar" id="disk-bar"></div></div>
+    </div>
+  </div>
+
+  <button onclick="loadData()">↻ Refresh</button>
+
+  <script>
+    function colorForPercent(pct) {
+      if (pct < 60) return '#4ade80';
+      if (pct < 85) return '#facc15';
+      return '#f87171';
+    }
+
+    function setBar(barId, pct) {
+      const bar = document.getElementById(barId);
+      bar.style.width = pct + '%';
+      bar.style.background = colorForPercent(pct);
+    }
+
+    function setColor(el, pct) {
+      el.className = 'big ' + (pct < 60 ? 'ok' : pct < 85 ? 'warn' : 'danger');
+    }
+
+    async function loadData() {
+      try {
+        const [health, metrics] = await Promise.all([
+          fetch('/health').then(r => r.json()),
+          fetch('/metrics').then(r => r.json())
+        ]);
+
+        // Health
+        document.getElementById('health-status').textContent = health.status;
+
+        // CPU
+        const cpu = metrics.cpu.usage_percent;
+        const cpuEl = document.getElementById('cpu');
+        cpuEl.textContent = cpu + '%';
+        setColor(cpuEl, cpu);
+        setBar('cpu-bar', cpu);
+
+        // Memory
+        const mem = metrics.memory.percent_used;
+        const memEl = document.getElementById('mem');
+        memEl.textContent = mem + '%';
+        setColor(memEl, mem);
+        setBar('mem-bar', mem);
+        document.getElementById('mem-sub').textContent =
+          `${metrics.memory.available_gb}GB free of ${metrics.memory.total_gb}GB`;
+
+        // Disk
+        const disk = metrics.disk.percent_used;
+        const diskEl = document.getElementById('disk');
+        diskEl.textContent = disk + '%';
+        setColor(diskEl, disk);
+        setBar('disk-bar', disk);
+        document.getElementById('disk-sub').textContent =
+          `${metrics.disk.available_gb}GB free of ${metrics.disk.total_gb}GB`;
+
+      } catch (e) {
+        document.getElementById('health-status').textContent = 'ERROR';
+        document.getElementById('health-status').className = 'big danger';
+        document.getElementById('status-dot').style.background = '#f87171';
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 5000); // auto-refresh every 5 seconds
+  </script>
+</body>
+</html>

@@ -1,11 +1,16 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from psutil import cpu_percent, virtual_memory, disk_usage
 
 app=FastAPI()
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
 @app.get("/")
 def root():
-    return {"status":"ok"}
+    return  FileResponse("static/index.html")
 
 @app.get("/info")
 def info():

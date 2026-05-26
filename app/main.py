@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from psutil import cpu_percent, virtual_memory, disk_usage
+import os
 
 app=FastAPI()
 
@@ -14,7 +15,11 @@ def root():
 
 @app.get("/info")
 def info():
-    return {"message":"Your app info is good"}
+    return {"message":"Your app info is good",
+            "app": "Security monitor",
+            "version" : "1.0.0",
+            "environment": os.getenv("ENVIRONMENT","local")
+            }
 
 @app.get("/health")
 def health():
